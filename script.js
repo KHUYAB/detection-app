@@ -1,10 +1,21 @@
-const apiKey = 'a05fb68fc3907e72aa9f00f1f3e72a23'; // OpenWeatherMap API Key
+const apiKey = 'a05fb68fc3907e72aa9f00f1f3e72a23';
+let currentLocation = '';
 
-async function getWeather() {
-  const location = document.getElementById('locationInput').value;
+function autoRefreshWeather() {
+  if (currentLocation !== "") {
+    getWeather(currentLocation);
+  }
+}
+
+setInterval(autoRefreshWeather, 60000); // 1 min
+
+async function getWeather(locationInput = null) {
+  const location = locationInput || document.getElementById('locationInput').value;
   if (!location) return alert("Pakilagay ang lokasyon mo");
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
+  currentLocation = location;
+
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric&_=${Date.now()}`;
 
   try {
     const response = await fetch(url);
@@ -18,34 +29,40 @@ async function getWeather() {
     const temp = data.main.temp;
     const description = data.weather[0].description.toLowerCase();
     const locationName = `${data.name}, ${data.sys.country}`;
+    const container = document.getElementById("weatherAnimation");
 
-    // Bagong basehan: aktwal na description
     let recommendation = "";
     let rainPercent = 0;
+    let conditionType = "neutral";
 
     if (description.includes("clear sky")) {
       recommendation = "Maliwanag ang langit ☀️. Perfect gumala!";
       rainPercent = 0;
+      conditionType = "sunny";
     } else if (description.includes("few clouds")) {
-      recommendation = "Maaliwalas pa rin kahit may kaunting ulap. Pwede kang lumabas Kasama ako!";
+      recommendation = "Maaliwalas kahit may kaunting ulap. Pwede kang lumabas!";
       rainPercent = 10;
+      conditionType = "sunny";
     } else if (description.includes("scattered clouds")) {
-      recommendation = "May kaunting ulap pero okay lang. Ingat lang lalona kapag hindi mo kasama Uyab mo!";
+      recommendation = "May kaunting ulap pero okay lang. Ingat lang!";
       rainPercent = 20;
     } else if (description.includes("overcast clouds")) {
-      recommendation = "Makulimlim na makulimlim. Medyo delikado gumala. ⛅";
+      recommendation = "Makulimlim. Medyo delikado gumala. ⛅";
       rainPercent = 40;
     } else if (description.includes("light rain")) {
-      recommendation = "May mahinang ulan. Magpayong ka kung lalabas ka wala pa naman ako sa tabi mo! 🌧️";
+      recommendation = "May mahinang ulan. Magpayong ka! 🌧️";
       rainPercent = 60;
+      conditionType = "rain";
     } else if (description.includes("moderate rain")) {
-      recommendation = "Medyo malakas ang ulan. Iwasan muna gumala wala pa naman ako sa tabi mo! ☔";
+      recommendation = "Medyo malakas ang ulan. Iwasan muna gumala ☔";
       rainPercent = 75;
+      conditionType = "rain";
     } else if (description.includes("heavy rain") || description.includes("thunderstorm")) {
-      recommendation = "Malakas ang ulan ⚡. Huwag nang gumala Kung ayaw mong magkasakit wala pa naman ako sa tabi mo!";
+      recommendation = "Malakas ang ulan ⚡. Huwag nang gumala!";
       rainPercent = 90;
+      conditionType = "rain";
     } else {
-      recommendation = "Hindi malinaw ang lagay ng panahon. Mag-ingat kung lalabas imissyou pala.";
+      recommendation = "Hindi malinaw ang lagay ng panahon. Mag-ingat kung lalabas.";
       rainPercent = 50;
     }
 
@@ -61,7 +78,49 @@ async function getWeather() {
 
     document.getElementById("weatherResult").innerHTML = message;
 
+    // Show animation
+    showWeatherAnimation(conditionType);
+
   } catch (err) {
     document.getElementById("weatherResult").innerHTML = "Nagkaroon ng error sa pagkuha ng panahon.";
   }
+}
+
+function showWeatherAnimation(type) {
+  const container = document.getElementById("weatherAnimation");
+  container.innerHTML = '';
+
+  if (type === "rain") {
+    for (let i = 0; i < 30; i++) {
+      const drop = document.createElement("div");
+      drop.classList.add("rain-drop");
+      drop.style.left = `${Math.random() * 100}%`;
+      drop.style.animationDelay = `${Math.random() * 0.5}s`;
+      container.appendChild(drop);
+    }
+  } else if (type === "sunny") {
+    const sun = document.createElement("div");
+    sun.classList.add("sunny");
+    container.appendChild(sun);
+  }
+}
+
+function detectMyLocation() {
+  navigator.geolocation.getCurrentPosition(async (position) => {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    currentLocation = `${lat},${lon}`;
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&_=${Date.now()}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const cityName = data.name;
+      getWeather(cityName);
+    } catch (e) {
+      alert("Hindi ma-detect ang lokasyon mo.");
+    }
+  });
 }
