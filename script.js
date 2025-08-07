@@ -27,7 +27,7 @@ async function getWeather() {
       recommendation = "Maliwanag ang langit ☀️. Perfect gumala!";
       rainPercent = 0;
     } else if (description.includes("few clouds")) {
-      recommendation = "Maaliwalas pa rin kahit may kaunting ulap. Pwede kang lumabas!";
+      recommendation = "Maaliwalas pa rin kahit may kaunting ulap. Pwede kang lumabas Kasama ako!";
       rainPercent = 10;
     } else if (description.includes("scattered clouds")) {
       recommendation = "May kaunting ulap pero okay lang. Ingat lang lalona kapag hindi mo kasama Uyab mo!";
